@@ -21,17 +21,13 @@ from absl import flags
 from absl import logging
 import jax
 from sam.sam_jax.datasets import dataset_source as dataset_source_lib
-from sam.sam_jax.datasets import dataset_source_brain
 from sam.sam_jax.datasets import dataset_source_imagenet
 from sam.sam_jax.efficientnet import efficientnet
 from sam.sam_jax.imagenet_models import load_model as load_imagenet_model
 from sam.sam_jax.models import load_model
 from sam.sam_jax.training_utils import flax_training
 import tensorflow.compat.v2 as tf
-# BEGIN GOOGLE-INTERNAL
-import google3.learning.deepmind.xmanager2.client.google as xm  # pylint:disable=unused-import
-# END GOOGLE-INTERNAL
-from google3.pyglib import gfile
+from tensorflow.io import gfile
 
 
 FLAGS = flags.FLAGS
@@ -69,7 +65,6 @@ flags.DEFINE_enum(
     'batch_level_augmentations', 'none', ['none', 'cutout', 'mixup', 'mixcut'],
     'Augmentations that are applied at the batch level. '
     'Not used by Imagenet and FromBrainDatasetSource datasets.')
-flags.DEFINE_string('cell', 'lu', 'Cell where the results should be saved.')
 
 
 def main(_):
@@ -99,8 +94,8 @@ def main(_):
 
   output_dir = os.path.join(FLAGS.output_dir, output_dir_suffix)
 
-  if not gfile.Exists(output_dir):
-    gfile.MakeDirs(output_dir)
+  if not gfile.exists(output_dir):
+    gfile.makedirs(output_dir)
 
   num_devices = jax.local_device_count() * jax.host_count()
   assert FLAGS.batch_size % num_devices == 0
@@ -141,11 +136,6 @@ def main(_):
     dataset_source = dataset_source_imagenet.Imagenet(
         FLAGS.batch_size // jax.host_count(), imagenet_image_size,
         FLAGS.image_level_augmentations)
-  elif FLAGS.dataset in dataset_source_brain.name_to_dataset:
-    imagenet_image_size = efficientnet.name_to_image_size(FLAGS.model_name)
-    dataset_source = dataset_source_brain.FromBrainDatasetSource(
-        FLAGS.dataset, FLAGS.batch_size // jax.host_count(),
-        imagenet_image_size)
   else:
     raise ValueError('Dataset not recognized.')
 
@@ -163,9 +153,7 @@ def main(_):
     num_channels = 3
     num_classes = 1000
   else:
-    image_size = imagenet_image_size
-    num_channels = 3
-    num_classes = dataset_source_brain.num_classes[FLAGS.dataset]
+    raise ValueError('Dataset not recognized.')
 
   try:
     model, state = load_imagenet_model.get_model(FLAGS.model_name,
