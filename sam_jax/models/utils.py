@@ -81,7 +81,8 @@ def dense_layer_init_fn(key: jnp.ndarray,
 
 def shake_shake_train(xa: jnp.ndarray,
                       xb: jnp.ndarray,
-                      rng: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+                      rng: Optional[jnp.ndarray] = None,
+                      true_gradient: bool = False) -> jnp.ndarray:
   """Shake-shake regularization in training mode.
 
   Shake-shake regularization interpolates between inputs A and B
@@ -92,6 +93,8 @@ def shake_shake_train(xa: jnp.ndarray,
     xa: Input, branch A.
     xb: Input, branch B.
     rng: PRNG key.
+    true_gradient: If true, the same mixing parameter will be used for the
+      forward and backward pass (see paper for more details).
 
   Returns:
     Mix of input branches.
@@ -104,10 +107,12 @@ def shake_shake_train(xa: jnp.ndarray,
   # Draw different interpolation factors (gate) for forward and backward pass.
   gate_forward = jax.random.uniform(
       gate_forward_key, gate_shape, dtype=jnp.float32, minval=0.0, maxval=1.0)
+  x_forward = xa * gate_forward + xb * (1.0 - gate_forward)
+  if true_gradient:
+    return x_forward
   gate_backward = jax.random.uniform(
       gate_backward_key, gate_shape, dtype=jnp.float32, minval=0.0, maxval=1.0)
   # Compute interpolated x for forward and backward.
-  x_forward = xa * gate_forward + xb * (1.0 - gate_forward)
   x_backward = xa * gate_backward + xb * (1.0 - gate_backward)
   # Combine using stop_gradient.
   return x_backward + jax.lax.stop_gradient(x_forward - x_backward)
@@ -133,7 +138,8 @@ def shake_drop_train(x: jnp.ndarray,
                      alpha_max: float,
                      beta_min: float,
                      beta_max: float,
-                     rng: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+                     rng: Optional[jnp.ndarray] = None,
+                     true_gradient: bool = False) -> jnp.ndarray:
   """ShakeDrop training pass.
 
   See https://arxiv.org/abs/1802.02375
@@ -146,6 +152,8 @@ def shake_drop_train(x: jnp.ndarray,
     beta_min: Beta range lower.
     beta_max: Beta range upper.
     rng: PRNG key (if `None`, uses `flax.nn.make_rng`).
+    true_gradient: If true, the same mixing parameter will be used for the
+      forward and backward pass (see paper for more details).
 
   Returns:
     The regularized tensor.
@@ -168,6 +176,8 @@ def shake_drop_train(x: jnp.ndarray,
       beta_key, rnd_shape, dtype=jnp.float32, minval=beta_min, maxval=beta_max)
   # See Eqn 6 in https://arxiv.org/abs/1802.02375.
   rand_forward = mask + alpha_values - mask * alpha_values
+  if true_gradient:
+    return x * rand_forward
   rand_backward = mask + beta_values - mask * beta_values
   return x * rand_backward + jax.lax.stop_gradient(
       x * rand_forward - x * rand_backward)

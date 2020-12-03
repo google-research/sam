@@ -73,6 +73,7 @@ def main(_):
   # make sure tf does not allocate gpu memory
   tf.config.experimental.set_visible_devices([], 'GPU')
 
+  # Performance gains on TPU by switching to hardware bernoulli.
   def hardware_bernoulli(rng_key, p=jax.numpy.float32(0.5), shape=None):
     lax_key = jax.lax.tie_in(rng_key, 0.0)
     return jax.lax.rng_uniform(lax_key, 1.0, shape) < p

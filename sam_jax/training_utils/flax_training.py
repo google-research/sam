@@ -493,15 +493,22 @@ def train_step(
       a dictionary containing the training loss and error rate on the batch.
   """
 
-  def forward_and_loss(model: flax.nn.Model):
+  def forward_and_loss(model: flax.nn.Model, true_gradient: bool = False):
     """Returns the model's loss, updated state and predictions.
 
     Args:
       model: The model that we are training.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass for the Shake Shake and Shake Drop
+        regularization (see papers for more details).
     """
     with flax.nn.stateful(state) as new_state:
       with flax.nn.stochastic(prng_key):
-        logits = model(batch['image'], train=True)
+        try:
+          logits = model(
+              batch['image'], train=True, true_gradient=true_gradient)
+        except TypeError:
+          logits = model(batch['image'], train=True)
     loss = cross_entropy_loss(logits, batch['label'])
     # We apply weight decay to all parameters, including bias and batch norm
     # parameters.
@@ -528,7 +535,7 @@ def train_step(
     """
     # compute gradient on the whole batch
     (_, (inner_state, _)), grad = jax.value_and_grad(
-        forward_and_loss, has_aux=True)(model)
+        lambda m: forward_and_loss(m, true_gradient=True), has_aux=True)(model)
     if FLAGS.sync_perturbations:
       if FLAGS.inner_group_size is None:
         grad = jax.lax.pmean(grad, 'batch')

@@ -29,7 +29,7 @@ FLAGS = flags.FLAGS
 
 
 flags.DEFINE_bool('use_test_set', True,
-                  'Whether to use the test set or not. If not, then 5k '
+                  'Whether to use the test set or not. If not, then 10% '
                   'observations will be set aside from the training set and '
                   'used as a validation set instead.')
 
@@ -313,13 +313,13 @@ class SVHN(TFDSDatasetSource):
       self._train_ds = ds_base.concatenate(ds_extra).cache()
       self._test_ds = tfds.load('svhn_cropped', split='test').cache()
       logging.info('Used test set instead of validation set.')
-      self.num_training_obs = 604388
+      self.num_training_obs = 73257+531131
     else:
-      ds_base = tfds.load('svhn_cropped', split='train[:65931]')
+      ds_base = tfds.load('svhn_cropped', split='train[:65929]')
       ds_extra = tfds.load('svhn_cropped', split='extra')
       self._train_ds = ds_base.concatenate(ds_extra).cache()
-      self._test_ds = tfds.load('svhn_cropped', split='train[65931:]').cache()
-      self.num_training_obs = 65931
+      self._test_ds = tfds.load('svhn_cropped', split='train[65929:]').cache()
+      self.num_training_obs = 65929+531131
       logging.info('Used validation set instead of test set.')
     self._augmentation = image_level_augmentations
     if batch_level_augmentations == 'cutout':

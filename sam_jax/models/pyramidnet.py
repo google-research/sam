@@ -87,7 +87,8 @@ class BottleneckShakeDrop(nn.Module):
             alpha_max: float,
             beta_min: float,
             beta_max: float,
-            train: bool = True) -> jnp.ndarray:
+            train: bool = True,
+            true_gradient: bool = False) -> jnp.ndarray:
     """Implements the forward pass in the module.
 
     Args:
@@ -102,6 +103,8 @@ class BottleneckShakeDrop(nn.Module):
       beta_max: See paper.
       train: If False, will use the moving average for batch norm statistics.
         Else, will use statistics computed on the batch.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass (see paper for more details).
 
     Returns:
       The output of the bottleneck block.
@@ -133,9 +136,10 @@ class BottleneckShakeDrop(nn.Module):
         name='1x1_conv_expand')
     y = utils.activation(y, apply_relu=False, train=train, name='bn_3')
 
-    if train:
+    if train and not self.is_initializing():
       y = utils.shake_drop_train(y, prob, alpha_min, alpha_max,
-                                 beta_min, beta_max)
+                                 beta_min, beta_max,
+                                 true_gradient=true_gradient)
     else:
       y = utils.shake_drop_eval(y, prob, alpha_min, alpha_max)
 
@@ -158,7 +162,8 @@ class PyramidNetShakeDrop(nn.Module):
             num_outputs: int,
             pyramid_alpha: int = 200,
             pyramid_depth: int = 272,
-            train: bool = True) -> jnp.ndarray:
+            train: bool = True,
+            true_gradient: bool = False) -> jnp.ndarray:
     """Implements the forward pass in the module.
 
     Args:
@@ -170,6 +175,8 @@ class PyramidNetShakeDrop(nn.Module):
       pyramid_depth: See paper.
       train: If False, will use the moving average for batch norm statistics.
         Else, will use statistics computed on the batch.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass (see paper for more details).
 
     Returns:
       The output of the PyramidNet model, a tensor of shape
@@ -213,7 +220,8 @@ class PyramidNetShakeDrop(nn.Module):
           alpha_max,
           beta_min,
           beta_max,
-          train=train)
+          train=train,
+          true_gradient=true_gradient)
       layer_num += 1
 
     for block_i in range(blocks_per_group):
@@ -224,7 +232,8 @@ class PyramidNetShakeDrop(nn.Module):
                               ((2, 2) if block_i == 0 else (1, 1)),
                               layer_mask_prob,
                               alpha_min, alpha_max, beta_min, beta_max,
-                              train=train)
+                              train=train,
+                              true_gradient=true_gradient)
       layer_num += 1
 
     for block_i in range(blocks_per_group):
@@ -235,7 +244,8 @@ class PyramidNetShakeDrop(nn.Module):
                               ((2, 2) if block_i == 0 else (1, 1)),
                               layer_mask_prob,
                               alpha_min, alpha_max, beta_min, beta_max,
-                              train=train)
+                              train=train,
+                              true_gradient=true_gradient)
       layer_num += 1
 
     assert layer_num - 1 == total_blocks

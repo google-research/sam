@@ -107,7 +107,8 @@ class ShakeShakeBlock(nn.Module):
             x: jnp.ndarray,
             channels: int,
             strides: Tuple[int, int] = (1, 1),
-            train: bool = True) -> jnp.ndarray:
+            train: bool = True,
+            true_gradient: bool = False) -> jnp.ndarray:
     """Implements the forward pass in the module.
 
     Args:
@@ -117,6 +118,8 @@ class ShakeShakeBlock(nn.Module):
       strides: Strides for the pooling.
       train: If False, will use the moving average for batch norm statistics.
         Else, will use statistics computed on the batch.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass (see paper for more details).
 
     Returns:
       The output of the resnet block. Will have shape
@@ -164,7 +167,7 @@ class ShakeShakeBlock(nn.Module):
     b = utils.activation(b, apply_relu=False, train=train, name='bn_b_2')
 
     if train and not self.is_initializing():
-      ab = utils.shake_shake_train(a, b)
+      ab = utils.shake_shake_train(a, b, true_gradient=true_gradient)
     else:
       ab = utils.shake_shake_eval(a, b)
 
@@ -182,7 +185,8 @@ class WideResnetShakeShakeGroup(nn.Module):
             blocks_per_group: int,
             channels: int,
             strides: Tuple[int, int] = (1, 1),
-            train: bool = True) -> jnp.ndarray:
+            train: bool = True,
+            true_gradient: bool = False) -> jnp.ndarray:
     """Implements the forward pass in the module.
 
     Args:
@@ -194,6 +198,8 @@ class WideResnetShakeShakeGroup(nn.Module):
       strides: Strides for the pooling.
       train: If False, will use the moving average for batch norm statistics.
         Else, will use statistics computed on the batch.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass (see paper for more details).
 
     Returns:
       The output of the resnet block. Will have shape
@@ -205,7 +211,8 @@ class WideResnetShakeShakeGroup(nn.Module):
           x,
           channels,
           strides if i == 0 else (1, 1),
-          train=train)
+          train=train,
+          true_gradient=true_gradient)
     return x
 
 
@@ -217,7 +224,8 @@ class WideResnetShakeShake(nn.Module):
             blocks_per_group: int,
             channel_multiplier: int,
             num_outputs: int,
-            train: bool = True) -> jnp.ndarray:
+            train: bool = True,
+            true_gradient: bool = False) -> jnp.ndarray:
     """Implements a WideResnet with ShakeShake regularization module.
 
     Args:
@@ -231,6 +239,8 @@ class WideResnetShakeShake(nn.Module):
         for a classification problem).
       train: If False, will use the moving average for batch norm statistics.
         Else, will use statistics computed on the batch.
+      true_gradient: If true, the same mixing parameter will be used for the
+        forward and backward pass (see paper for more details).
 
     Returns:
       The output of the WideResnet with ShakeShake regularization, a tensor of
@@ -248,18 +258,21 @@ class WideResnetShakeShake(nn.Module):
         x,
         blocks_per_group,
         16 * channel_multiplier,
-        train=train)
+        train=train,
+        true_gradient=true_gradient)
     x = WideResnetShakeShakeGroup(
         x,
         blocks_per_group,
         32 * channel_multiplier, (2, 2),
-        train=train)
+        train=train,
+        true_gradient=true_gradient)
     x = WideResnetShakeShakeGroup(
         x,
         blocks_per_group,
         64 * channel_multiplier, (2, 2),
-        train=train)
+        train=train,
+        true_gradient=true_gradient)
     x = jax.nn.relu(x)
-    x = nn.avg_pool(x, (8, 8))
+    x = nn.avg_pool(x, x.shape[1:3])
     x = x.reshape((x.shape[0], -1))
     return  nn.Dense(x, num_outputs, kernel_init=utils.dense_layer_init_fn)

@@ -25,27 +25,28 @@ This code allows the user to replicate most of the experiments of the paper, inc
 
 ## How to train from scratch
 
-Once the repo is cloned, experiments can be launched using sam_jax.train.py:
+Once the repo is cloned, experiments can be launched using sam.sam_jax.train.py:
 
 ```
-python3 -m sam_jax.train --dataset cifar10 --model_name WideResnet28x10 \
+python3 -m sam.sam_jax.train --dataset cifar10 --model_name WideResnet28x10 \
 --output_dir /tmp/my_experiment --image_level_augmentations autoaugment \
 --num_epochs 1800 --sam_rho 0.05
 ```
 
-Note that our code uses all available GPUs/TPUs for fine-tuning.
+Note that our code uses all available GPUs/TPUs for training.
 
-To see a detailed list of all available flags, run python3 -m sam_jax.train --help.
-
-#### Notes about some flags:
-
-TODO
+To see a detailed list of all available flags, run python3 -m sam.sam_jax.train --help.
 
 #### Output
 
 Training curves can be loaded using TensorBoard. TensorBoard events will be
 saved in the output_dir, and their path will contain the learning_rate,
 the weight_decay, rho and the random_seed.
+
+## Coming soon:
+
+We will opensource the FLAX checkpoints for efficientnet soon.
+
 
 ## Bibtex
 
