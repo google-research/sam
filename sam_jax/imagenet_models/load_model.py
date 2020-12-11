@@ -32,10 +32,6 @@ FLAGS = flags.FLAGS
 flags.DEFINE_bool('from_pretrained_checkpoint', False,
                   'If True, the model will be restarted from an pretrained '
                   'checkpoint')
-flags.DEFINE_string('imagenet_checkpoint_cell', None,
-                    'Cell from where the checkpoint should be loaded. '
-                    'See `CHECKPOINT_PATH` for the path where the checkpoint '
-                    'is expected. Currently available on cells lu, yo, el, nm.')
 flags.DEFINE_string('efficientnet_checkpoint_path', None,
                     'If finetuning, path to the efficientnet checkpoint.')
 
