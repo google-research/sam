@@ -17,7 +17,7 @@ google-auth==1.23.0
 google-auth-oauthlib==0.4.2
 google-pasta==0.2.0
 googleapis-common-protos==1.52.0
-grpcio==1.34.0
+grpcio==1.53.0
 h5py==2.10.0
 idna==2.10
 importlib-resources==3.3.0
