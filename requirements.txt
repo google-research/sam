@@ -54,7 +54,7 @@ tensorflow-estimator==2.3.0
 tensorflow-metadata==0.25.0
 tensorflow-probability==0.11.1
 termcolor==1.1.0
-tqdm==4.54.0
+tqdm==4.66.3
 typeguard==2.10.0
 typing==3.7.4.3
 urllib3==1.26.2
