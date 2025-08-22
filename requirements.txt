@@ -11,7 +11,7 @@ dill==0.3.3
 dm-tree==0.1.5
 flatbuffers==1.12
 flax==0.2.2
-future==0.18.2
+future==1.0.0
 gast==0.3.3
 google-auth==1.23.0
 google-auth-oauthlib==0.4.2
