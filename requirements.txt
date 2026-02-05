@@ -34,7 +34,7 @@ opt-einsum==3.3.0
 pandas==1.1.4
 Pillow==8.0.1
 promise==2.3
-protobuf==3.14.0
+protobuf==5.29.6
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pyparsing==2.4.7
